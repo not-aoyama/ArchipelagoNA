@@ -65,7 +65,10 @@ class ChestsNKeysWorld(World):
             self.get_location(f"Chest {i}").item_rule = lambda item : item.name != "Key {i}"
         
         # Set access rule for the desk.
+        # Also make it so that if keys are enabled, the desk cannot contain the item that does nothing.
         self.get_location("Desk").access_rule = get_desk_rule()
+        if self.options.keys_enabled:
+            self.get_location("Desk").item_rule = lambda item : item.name != "Item That Does Nothing"
         
         # Set the completion condition.
         # If keys are enabled, completion is only possible if the player has every key.
