@@ -17,12 +17,12 @@ class ChestsNKeysWorld(World):
     """The most original Archipelago game of all time."""
 
     game = "Chests 'n' Keys"
-    web = ChestsNKeysWebWorld
+    web = ChestsNKeysWebWorld()
     options : ChestsNKeysOptions
     options_dataclass = ChestsNKeysOptions
-    item_name_to_id = {item_name: item_data.code for item_name, item_data in item_data_table}
+    item_name_to_id = {item_name: item_data.code for item_name, item_data in item_data_table.items()}
     location_name_to_id = {
-        location_name : location_data.address for location_name, location_data in location_data_table
+        location_name : location_data.address for location_name, location_data in location_data_table.items()
     }
 
     def create_item(self, name) -> ChestsNKeysItem:
