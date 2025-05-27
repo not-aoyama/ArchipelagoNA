@@ -11,3 +11,7 @@ def get_chest_rule(world : ChestsNKeysWorld, i : int) -> Callable[[CollectionSta
     
     # If keys are disabled, all chests will always be accessible.
     return lambda _: True
+
+def get_desk_rule():
+    # The desk is always accessible.
+    return lambda _: True

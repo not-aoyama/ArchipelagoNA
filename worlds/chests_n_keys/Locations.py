@@ -2,7 +2,9 @@ from typing import Dict, NamedTuple
 
 from BaseClasses import Location
 
-# There will be 256 total possible locations: Chests 1 through 256.
+# There will be 257 total possible locations: Chests 1 through 256, and the Desk.
+# Chests may or may not be locked, but the Desk is always unlocked, 
+# guaranteeing that the player starts with at least one item.
 
 class ChestsNKeysLocation(Location):
     game = "Chests 'n' Keys"
@@ -16,5 +18,8 @@ def initialize_location_data():
     # Add each chest to the location data table.
     for i in range(1, 257):
         location_data_table.update({f"Chest {i}": ChestsNKeysLocationData(420000 + i)})
+    
+    # Add the desk to the location data table.
+    location_data_table.update({"Desk": ChestsNKeysLocationData(420000)})
 
 initialize_location_data()

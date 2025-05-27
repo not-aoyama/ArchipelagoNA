@@ -6,7 +6,7 @@ from worlds.AutoWorld import WebWorld, World
 from .Items import ChestsNKeysItem, item_data_table
 from .Locations import ChestsNKeysLocation, location_data_table
 from .Options import ChestsNKeysOptions
-from .Rules import get_chest_rule
+from .Rules import get_chest_rule, get_desk_rule
 
 class ChestsNKeysWebWorld(WebWorld):
     theme = "partyTime"
@@ -31,13 +31,14 @@ class ChestsNKeysWorld(World):
     def create_items(self):
         item_pool : List[ChestsNKeysItem] = []
 
-        # If keys are enabled, create as many keys as there will be chests.
-        # Otherwise, create as many filler items as there will be chests.
+        # If keys are enabled, create as many keys as there will be chests, plus one filler item.
+        # Otherwise, create enough filler items so that there is one more filler item than there are chests.
         if self.options.keys_enabled:
             for i in range(1, self.options.number_of_chests.value + 1):
                 item_pool.append(self.create_item(f"Key {i}"))
+            item_pool.append(self.create_item("Item That Does Nothing"))
         else:
-            for i in range(self.options.number_of_chests.value):
+            for i in range(self.options.number_of_chests.value + 1):
                 item_pool.append(self.create_item("Item That Does Nothing"))
         
         self.multiworld.itempool += item_pool
@@ -46,11 +47,12 @@ class ChestsNKeysWorld(World):
         # There will only be one region. It will have the default origin region name, "Menu".
         self.multiworld.regions.append(Region("Menu", self.player, self.multiworld))
 
-        # Create locations, i.e. the chests. There will be as many chests as specified in the options.
+        # Create locations, i.e. the chests and the desk. There will be as many chests as specified in the options.
         region = self.get_region("Menu")
         for i in range(1, self.options.number_of_chests.value + 1):
             location_name = f"Chest {i}"
             region.add_locations({location_name: location_data_table[location_name].address}, ChestsNKeysLocation)
+        region.add_locations({"Desk": location_data_table["Desk"].address}, ChestsNKeysLocation)
         
     def get_filler_item_name(self) -> str:
         return "Item That Does Nothing"
@@ -62,6 +64,9 @@ class ChestsNKeysWorld(World):
             self.get_location(f"Chest {i}").access_rule = get_chest_rule(self, i)
             self.get_location(f"Chest {i}").item_rule = lambda item : item.name != "Key {i}"
         
+        # Set access rule for the desk.
+        self.get_location("Desk").access_rule = get_desk_rule()
+        
         # Set the completion condition.
         # If keys are enabled, completion is only possible if the player has every key.
         if self.options.keys_enabled:
@@ -71,4 +76,4 @@ class ChestsNKeysWorld(World):
             self.multiworld.completion_condition[self.player] = lambda state : state.has_all(all_keys, self.player)
         # If keys are disabled, completion is always possible, so the completion condition is true.
         else:
-            self.multiworld.completion_condition[self.player] = lambda state : True
+            self.multiworld.completion_condition[self.player] = lambda _ : True
