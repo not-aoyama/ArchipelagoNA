@@ -1,4 +1,4 @@
-from typing import List
+from typing import Dict, List, Any
 
 from BaseClasses import Region
 from worlds.AutoWorld import WebWorld, World
@@ -80,3 +80,8 @@ class ChestsNKeysWorld(World):
         # If keys are disabled, completion is always possible, so the completion condition is true.
         else:
             self.multiworld.completion_condition[self.player] = lambda _ : True
+
+    def fill_slot_data(self) -> Dict[str, Any]:
+        # In order for our client to handle the generated seed correctly, it needs to know whether the user chose for
+        # keys to be enabled.
+        return self.options.as_dict("keys_enabled")
