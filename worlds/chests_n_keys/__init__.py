@@ -53,6 +53,9 @@ class ChestsNKeysWorld(World):
             location_name = f"Chest {i}"
             region.add_locations({location_name: location_data_table[location_name].address}, ChestsNKeysLocation)
         region.add_locations({"Desk": location_data_table["Desk"].address}, ChestsNKeysLocation)
+
+        # Set the desk as a priority location so that there is always an important item in Sphere 1.
+        self.options.priority_locations.value.add("Desk")
         
     def get_filler_item_name(self) -> str:
         return "Item That Does Nothing"
@@ -65,10 +68,7 @@ class ChestsNKeysWorld(World):
             self.get_location(f"Chest {i}").item_rule = lambda item : item.name != "Key {i}"
         
         # Set access rule for the desk.
-        # Also make it so that if keys are enabled, the desk cannot contain the item that does nothing.
         self.get_location("Desk").access_rule = get_desk_rule()
-        if self.options.keys_enabled:
-            self.get_location("Desk").item_rule = lambda item : item.name != "Item That Does Nothing"
         
         # Set the completion condition.
         # If keys are enabled, completion is only possible if the player has every key.
