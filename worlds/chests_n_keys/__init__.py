@@ -6,7 +6,7 @@ from worlds.AutoWorld import WebWorld, World
 from .Items import ChestsNKeysItem, item_data_table
 from .Locations import ChestsNKeysLocation, location_data_table
 from .Options import ChestsNKeysOptions
-from .Rules import get_chest_rule, get_desk_rule
+from .Rules import get_chest_rule
 
 class ChestsNKeysWebWorld(WebWorld):
     theme = "partyTime"
@@ -31,15 +31,16 @@ class ChestsNKeysWorld(World):
     def create_items(self):
         item_pool : List[ChestsNKeysItem] = []
 
-        # If keys are enabled, create as many keys as there will be chests, plus one filler item.
-        # Otherwise, create enough filler items so that there is one more filler item than there are chests.
-        if self.options.keys_enabled:
-            for i in range(1, self.options.number_of_chests.value + 1):
-                item_pool.append(self.create_item(f"Key {i}"))
+        # Force the number of locked chests to be no greater than the total number of chests minus 1.
+        number_of_locked_chests : int = min(self.options.number_of_locked_chests.value, self.options.number_of_chests - 1)
+        
+        # Create as many keys as there are locked chests, and create as many filler items as there are unlocked chests.
+        number_of_unlocked_chests : int = self.options.number_of_chests.value - number_of_locked_chests
+        for _ in range (0, number_of_unlocked_chests):
             item_pool.append(self.create_item("Item That Does Nothing"))
-        else:
-            for i in range(self.options.number_of_chests.value + 1):
-                item_pool.append(self.create_item("Item That Does Nothing"))
+        # The locked chests come after the unlocked chests, so they have higher numbers.
+        for i in range (number_of_unlocked_chests + 1, self.options.number_of_chests.value + 1):
+            item_pool.append(self.create_item(f"Key {i}"))
         
         self.multiworld.itempool += item_pool
     
@@ -47,15 +48,13 @@ class ChestsNKeysWorld(World):
         # There will only be one region. It will have the default origin region name, "Menu".
         self.multiworld.regions.append(Region("Menu", self.player, self.multiworld))
 
-        # Create locations, i.e. the chests and the desk. There will be as many chests as specified in the options.
+        # Create locations, i.e. the chests. There will be as many chests as specified in the options.
         region = self.get_region("Menu")
         for i in range(1, self.options.number_of_chests.value + 1):
             location_name = f"Chest {i}"
             region.add_locations({location_name: location_data_table[location_name].address}, ChestsNKeysLocation)
-        region.add_locations({"Desk": location_data_table["Desk"].address}, ChestsNKeysLocation)
 
-        # Set the desk as a priority location so that there is always an important item in Sphere 1.
-        self.options.priority_locations.value.add("Desk")
+        # TODO: consider whether to make Chest 1 a priority location, since Chest 1 will always be unlocked.
         
     def get_filler_item_name(self) -> str:
         return "Item That Does Nothing"
@@ -67,21 +66,26 @@ class ChestsNKeysWorld(World):
             self.get_location(f"Chest {i}").access_rule = get_chest_rule(self, i)
             self.get_location(f"Chest {i}").item_rule = lambda item : item.name != "Key {i}"
         
-        # Set access rule for the desk.
-        self.get_location("Desk").access_rule = get_desk_rule()
-        
         # Set the completion condition.
-        # If keys are enabled, completion is only possible if the player has every key.
-        if self.options.keys_enabled:
-            all_keys : List[str] = []
-            for i in range(1, self.options.number_of_chests.value + 1):
-                all_keys.append(f"Key {i}")
-            self.multiworld.completion_condition[self.player] = lambda state : state.has_all(all_keys, self.player)
-        # If keys are disabled, completion is always possible, so the completion condition is true.
-        else:
-            self.multiworld.completion_condition[self.player] = lambda _ : True
+        # Completion is only possible if the player has as many keys as there are required chests.
+        all_keys : List[str] = []
+        # Number of unlocked chests
+        number_of_unlocked_chests : int = self.options.number_of_chests.value - self.options.number_of_locked_chests.value
+        # Number of the first locked chest (comes immediately after all the unlocked chests)
+        first_locked_chest : int = number_of_unlocked_chests + 1
+        # Number of the last locked chest (the last chest of them all)
+        last_locked_chest : int = self.options.number_of_chests.value
+        for i in range(first_locked_chest, last_locked_chest + 1):
+            all_keys.append(f"Key {i}")
+        # Force the number of required chests to be no greater than the total number of chests.
+        number_of_required_chests : int = min(self.options.number_of_required_chests.value, self.options.number_of_chests.value)
+        # The number of keys that is required is the number of required chests minus the number of unlocked chests,
+        # since unlocked chests can be opened without keys.
+        self.multiworld.completion_condition[self.player] = lambda state : state.has_from_list_unique(
+            all_keys, self.player, number_of_required_chests - number_of_unlocked_chests)
 
     def fill_slot_data(self) -> Dict[str, Any]:
-        # In order for our client to handle the generated seed correctly, it needs to know whether the user chose for
-        # keys to be enabled.
-        return self.options.as_dict("keys_enabled")
+        # In order for our client to handle the generated seed correctly, 
+        # it needs to know how many chests start out locked
+        # and how many chests are required to goal.
+        return self.options.as_dict("number_of_locked_chests", "number_of_required_chests")
