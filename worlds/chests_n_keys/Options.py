@@ -1,12 +1,15 @@
 from dataclasses import dataclass
 from Options import Range, NamedRange, PerGameCommonOptions
 
+"""The maximum number of chests that can exist in a single Chests 'n' Keys slot."""
+MAX_NUMBER_CHESTS = 360
+
 class NumberOfChests(Range):
     """How many chests there are."""
     internal_name = "number_of_chests"
     display_name = "Number of Chests"
     range_start = 1
-    range_end = 300
+    range_end = MAX_NUMBER_CHESTS
     default = 1
 
 class NumberOfLockedChests(NamedRange):
@@ -18,12 +21,12 @@ class NumberOfLockedChests(NamedRange):
     internal_name = "number_of_locked_chests"
     display_name = "Number of Locked Chests"
     range_start = 0
-    range_end = 299
+    range_end = MAX_NUMBER_CHESTS - 1
     default = 0
 
     special_range_names = {
         "none": 0,
-        "maximum": 299
+        "maximum": MAX_NUMBER_CHESTS - 1
     }
 
 class NumberOfRequiredChests(NamedRange):
@@ -34,12 +37,12 @@ class NumberOfRequiredChests(NamedRange):
     internal_name = "number_of_required_chests"
     display_name = "Number of Required Chests"
     range_start = 0
-    range_end = 299
-    default = 299
+    range_end = MAX_NUMBER_CHESTS
+    default = MAX_NUMBER_CHESTS
 
     special_range_names = {
         "none": 0,
-        "all": 299
+        "all": MAX_NUMBER_CHESTS
     }
 
 @dataclass
