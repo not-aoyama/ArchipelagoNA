@@ -16,8 +16,9 @@ class ChestsNKeysItemData(NamedTuple):
 item_data_table : Dict[str, ChestsNKeysItemData] = {}
 
 def initialize_item_data():
-    # Add in Keys 1 through 359
-    for i in range(1, MAX_NUMBER_CHESTS):
+    # Add in Keys 2 through 360.
+    # Chest 1 will always be unlocked no matter what, so Key 1 will never exist.
+    for i in range(2, MAX_NUMBER_CHESTS + 1):
         item_data_table.update({
             f"Key {i}":
             ChestsNKeysItemData(69000 + i, ItemClassification.progression)
