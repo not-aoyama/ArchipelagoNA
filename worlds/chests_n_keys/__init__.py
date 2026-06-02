@@ -67,22 +67,29 @@ class ChestsNKeysWorld(World):
             self.get_location(f"Chest {i}").item_rule = lambda item : item.name != "Key {i}"
         
         # Set the completion condition.
-        # Completion is only possible if the player has as many keys as there are required chests.
-        all_keys : List[str] = []
-        # Number of unlocked chests
-        number_of_unlocked_chests : int = self.options.number_of_chests.value - self.options.number_of_locked_chests.value
-        # Number of the first locked chest (comes immediately after all the unlocked chests)
-        first_locked_chest : int = number_of_unlocked_chests + 1
-        # Number of the last locked chest (the last chest of them all)
-        last_locked_chest : int = self.options.number_of_chests.value
-        for i in range(first_locked_chest, last_locked_chest + 1):
-            all_keys.append(f"Key {i}")
-        # Force the number of required chests to be no greater than the total number of chests.
-        number_of_required_chests : int = min(self.options.number_of_required_chests.value, self.options.number_of_chests.value)
-        # The number of keys that is required is the number of required chests minus the number of unlocked chests,
-        # since unlocked chests can be opened without keys.
-        self.multiworld.completion_condition[self.player] = lambda state : state.has_from_list_unique(
-            all_keys, self.player, number_of_required_chests - number_of_unlocked_chests)
+        # Completion is only possible if the player has enough keys to open the required number of chests.
+        # Force the number of locked chests to be no greater than the total number of chests minus 1.
+        number_of_locked_chests : int = min(self.options.number_of_locked_chests.value, self.options.number_of_chests.value - 1)
+        # If none of the chests are locked, the game is always winnable no matter what!
+        if number_of_locked_chests == 0:
+            self.multiworld.completion_condition[self.player] = lambda _ : True
+        else:
+            # If there are locked chests, we need to make a list of all keys corresponding to those locked chests.
+            all_keys : List[str] = []
+            # Number of unlocked chests
+            number_of_unlocked_chests : int = self.options.number_of_chests.value - number_of_locked_chests
+            # Number of the first locked chest (comes immediately after all the unlocked chests)
+            first_locked_chest : int = number_of_unlocked_chests + 1
+            # Number of the last locked chest (the last chest of them all)
+            last_locked_chest : int = self.options.number_of_chests.value
+            for i in range(first_locked_chest, last_locked_chest + 1):
+                all_keys.append(f"Key {i}")
+            # Force the number of required chests to be no greater than the total number of chests.
+            number_of_required_chests : int = min(self.options.number_of_required_chests.value, self.options.number_of_chests.value)
+            # The number of keys that is required is the number of required chests minus the number of unlocked chests,
+            # since unlocked chests can be opened without keys.
+            self.multiworld.completion_condition[self.player] = lambda state : state.has_from_list_unique(
+                all_keys, self.player, number_of_required_chests - number_of_unlocked_chests)
 
     def fill_slot_data(self) -> Dict[str, Any]:
         # In order for our client to handle the generated seed correctly, 
